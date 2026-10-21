@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>anixuzan</title>
+<meta name="description" content="anixuzan: anime videolar">
+<style>
+:root{
+  --bg:#1a1633;
+  --surface:#251f48;
+  --line:#3a336b;
+  --text:#f3eefc;
+  --muted:#b3acd6;
+  --pink:#ff7fa8;
+  --sky:#7fd6ff;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.top{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line)}
+.top-in{max-width:1000px;margin:0 auto;padding:12px 16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.logo{font-size:24px;font-weight:800;letter-spacing:-.5px;margin:0}
+.logo span{color:var(--pink)}
+#q{flex:1 1 200px;background:var(--surface);color:var(--text);border:1px solid var(--line);border-radius:999px;padding:10px 16px;font:inherit}
+#q:focus,button:focus-visible{outline:2px solid var(--sky);outline-offset:2px}
+main{max-width:1000px;margin:0 auto;padding:16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:16px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden;text-align:left;color:inherit;padding:0;cursor:pointer;font:inherit}
+.card:hover{border-color:var(--pink)}
+.cover{aspect-ratio:16/9;background:linear-gradient(135deg,var(--line),var(--surface));display:flex;align-items:center;justify-content:center;font-size:42px;font-weight:800;color:var(--pink)}
+.cover img{width:100%;height:100%;object-fit:cover;display:block}
+.info{padding:10px 12px 12px}
+.info b{display:block}
+.info small{color:var(--muted)}
+.empty{color:var(--muted);padding:40px 0;text-align:center}
+dialog{width:min(900px,95vw);background:var(--surface);color:var(--text);border:1px solid var(--line);border-radius:16px;padding:14px}
+dialog::backdrop{background:rgba(10,8,25,.8)}
+.bar{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:10px}
+.bar h2{margin:0;font-size:18px}
+.close{background:var(--pink);color:#2a0f1a;border:0;border-radius:10px;padding:8px 14px;font:inherit;font-weight:700;cursor:pointer}
+.player{position:relative;padding-top:56.25%;background:#000;border-radius:10px;overflow:hidden}
+.player iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+#pdesc{color:var(--muted);margin:10px 0 0}
+footer{max-width:1000px;margin:24px auto;padding:0 16px;color:var(--muted);font-size:14px}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="top-in">
+    <h1 class="logo">anix<span>uzan</span></h1>
+    <input id="q" type="search" placeholder="Anime nomini qidiring" aria-label="Qidiruv">
+  </div>
+</header>
+
+<main>
+  <div id="grid" class="grid"></div>
+  <div id="empty" class="empty" hidden></div>
+</main>
+
+<footer>© anixuzan</footer>
+
+<dialog id="dlg">
+  <div class="bar">
+    <h2 id="ptitle"></h2>
+    <button class="close" id="close">Yopish</button>
+  </div>
+  <div class="player" id="player"></div>
+  <p id="pdesc"></p>
+</dialog>
+
+<script src="videos.js"></script>
+<script>
+const videos = window.VIDEOS || [];
+const grid = document.getElementById("grid");
+const empty = document.getElementById("empty");
+const dlg = document.getElementById("dlg");
+const player = document.getElementById("player");
+
+function make(tag, cls, text) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text != null) e.textContent = text;
+  return e;
+}
+
+function openVideo(v) {
+  document.getElementById("ptitle").textContent = v.title;
+  document.getElementById("pdesc").textContent = v.desc || "";
+  player.textContent = "";
+  const f = document.createElement("iframe");
+  f.src = v.embed;
+  f.allow = "accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture; fullscreen";
+  f.allowFullscreen = true;
+  player.append(f);
+  dlg.showModal();
+}
+
+function closeVideo() {
+  dlg.close();
+  player.textContent = "";
+}
+
+function render(q) {
+  const key = (q || "").trim().toLowerCase();
+  const shown = videos.filter(v => !key || v.title.toLowerCase().includes(key));
+  grid.textContent = "";
+  shown.forEach(v => {
+    const card = make("button", "card");
+    const cover = make("div", "cover");
+    if (v.poster) {
+      const img = document.createElement("img");
+      img.src = v.poster;
+      img.alt = "";
+      img.loading = "lazy";
+      cover.append(img);
+    } else {
+      cover.textContent = v.title.charAt(0).toUpperCase();
+    }
+    const info = make("div", "info");
+    info.append(make("b", "", v.title));
+    if (v.desc) info.append(make("small", "", v.desc));
+    card.append(cover, info);
+    card.addEventListener("click", () => openVideo(v));
+    grid.append(card);
+  });
+  empty.hidden = shown.length > 0;
+  empty.textContent = videos.length ? "Hech narsa topilmadi." : "Hozircha videolar yo‘q.";
+}
+
+document.getElementById("q").addEventListener("input", e => render(e.target.value));
+document.getElementById("close").addEventListener("click", closeVideo);
+dlg.addEventListener("click", e => { if (e.target === dlg) closeVideo(); });
+dlg.addEventListener("cancel", () => { player.textContent = ""; });
+render("");
+</script>
+</body>
+</html>
